@@ -1,4 +1,5 @@
 from pacai.util import reflection
+from pacai.agents.capture.reflex import ReflexCaptureAgent
 
 def createTeam(firstIndex, secondIndex, isRed,
         first = 'pacai.agents.capture.dummy.DummyAgent',
@@ -17,3 +18,15 @@ def createTeam(firstIndex, secondIndex, isRed,
         firstAgent(firstIndex),
         secondAgent(secondIndex),
     ]
+
+class ReflexCaptureAgent(CaptureAgent):
+        
+        pass
+
+class OffensiveReflexAgent(ReflexCaptureAgent):
+        
+        pass
+
+class DefensiveReflexAgent(ReflexCaptureAgent):
+        
+        pass
