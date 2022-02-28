@@ -6,9 +6,6 @@ import random
 import time
 
 from pacai.agents.capture.capture import CaptureAgent
-# from pacai.agents.capture.defense import DefensiveReflexAgent
-# from pacai.agents.capture.offense import OffensiveReflexAgent
-# from pacai.agents.capture.reflex import ReflexCaptureAgent
 
 from pacai.util import util
 
@@ -133,17 +130,15 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         #
         # Compute distance to the nearest food and capsule.
         myFoodList = self.getFoodYouAreDefending(successor).asList()
-        myCapList = self.getCapsulesYouAreDefending(successor).asList()
+        myCapList = self.getCapsulesYouAreDefending(successor)
         # This should always be True, but better safe than sorry.
         if (len(myFoodList) > 0):
-            myPos = successor.getAgentState(self.index).getPosition()
-            minDistance = min([self.getMazeDistance(myPos, food) for food in myFoodList])
-            features['foodDistance'] = minDistance #average distance maybe?
+            minDistanceFood = min([self.getMazeDistance(myPos, food) for food in myFoodList])
+            features['foodDistance'] = minDistanceFood #average distance maybe?
         #
         if (len(myCapList) > 0):
-            myPos = successor.getAgentState(self.index).getPosition()
-            minDistance = min([self.getMazeDistance(myPos, cap) for cap in myCapList])
-            features['capsuleDistance'] = minDistance #average distance maybe?
+            minDistanceCapsule = min([self.getMazeDistance(myPos, cap) for cap in myCapList])
+            features['capsuleDistance'] = minDistanceCapsule #average distance maybe?
         #
         #
         if (action == Directions.STOP):
@@ -163,8 +158,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
             'numInvaders': -1000,
             'onDefense': 100,
             'invaderDistance': -10,
-            'foodDistance': 5,
-            'capsuleDistance': 8,
+            'foodDistance': -5,
+            'capsuleDistance': -8,
             'stop': -100,
             'reverse': -2
         }
@@ -186,23 +181,27 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         features = {}
         successor = self.getSuccessor(gameState, action)
         features['successorScore'] = self.getScore(successor)
-
+        myPos = successor.getAgentState(self.index).getPosition()
         # Compute distance to the nearest food.
         foodList = self.getFood(successor).asList()
+        capsuleList = self.getCapsules(successor)
 
         # This should always be True, but better safe than sorry.
         if (len(foodList) > 0):
-            myPos = successor.getAgentState(self.index).getPosition()
             minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
             features['distanceToFood'] = minDistance
+
+        #capsule
+        if (len(capsuleList) > 0):
+            minDistanceCapsule = min([self.getMazeDistance(myPos, capsule) for capsule in capsuleList])
+            features['distanceToCapsule'] = minDistanceCapsule
 
         # Reward ORA for staying away from Ghosts
         enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
         myPos = successor.getAgentState(self.index).getPosition()
         if len(enemies) > 0:
             enemyDistance = min([self.getMazeDistance(myPos, enemy.getPosition()) for enemy in enemies]) 
-
-        features['distanceToEnemy'] = enemyDistance
+            features['distanceToEnemy'] = enemyDistance
 
         return features
 
@@ -210,8 +209,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     def getWeights(self, gameState, action):
         return {
             'successorScore': 100,
-            'distanceToFood': -1,
-            'distanceToEnemy': -5
+            'distanceToFood': -2,
+            'distanceToCapsule': -50,
+            'distanceToEnemy': -40
         }
 
 
