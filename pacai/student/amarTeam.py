@@ -158,8 +158,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
             'numInvaders': -1000,
             'onDefense': 100,
             'invaderDistance': -10,
-            'foodDistance': -5,
-            'capsuleDistance': -8,
+            'foodDistance': -4,
+            'capsuleDistance': -6,
             'stop': -100,
             'reverse': -2
         }
@@ -209,9 +209,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     def getWeights(self, gameState, action):
         return {
             'successorScore': 100,
-            'distanceToFood': -2,
-            'distanceToCapsule': -50,
-            'distanceToEnemy': -40
+            'distanceToFood': -1,
+            'distanceToCapsule': -1,
+            'distanceToEnemy': 1
         }
 
 
