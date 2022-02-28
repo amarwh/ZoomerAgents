@@ -176,17 +176,25 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     def __init__(self, index, **kwargs):
         super().__init__(index)
 
-        scaredEnemies = 0
+        self.scaredEnemies = 0
+        # self.enemyClose = 0
 
     def getFeatures(self, gameState, action):
         features = {}
+
         successor = self.getSuccessor(gameState, action)
         features['successorScore'] = self.getScore(successor)
+        # myState = successor.getAgentState(self.index)
         myPos = successor.getAgentState(self.index).getPosition()
 
         # Compute distance to the nearest food.
         foodList = self.getFood(successor).asList()
         capsuleList = self.getCapsules(successor)
+
+        # Computes whether we're on defense (1) or offense (0).
+        # features['onDefense'] = 1
+        # if (myState.isPacman()):
+        #     features['onDefense'] = 0
 
         # This should always be True, but better safe than sorry.
         if (len(foodList) > 0):
@@ -203,6 +211,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         if len(enemies) > 0:
             enemyDistance = min([self.getMazeDistance(myPos, enemy.getPosition()) for enemy in enemies]) 
             features['distanceToEnemy'] = enemyDistance
+
+            # if enemyDistance < 2:
+            #     self.enemyClose += 1
+
             if enemyDistance <= 10 and enemyDistance > 0: # checking if close to ghost
                 features['distanceToEnemyInversed'] = 1 / enemyDistance 
                 # Getting the inverse to discourage getting close to the ghost, more incentive the closer
@@ -212,7 +224,12 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         scaredGhosts = [g for g in enemies if g.getScaredTimer() > 0]
         self.scaredEnemies = len(scaredGhosts)
         #print("scared" for e in enemies if e.isScared())
-        print(self.scaredEnemies)
+        # print(self.scaredEnemies)
+
+        # Computes distance to invaders we can see.
+        enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
+        invaders = [a for a in enemies if a.isPacman() and a.getPosition() is not None]
+        features['numInvaders'] = len(invaders)
 
         if (action == Directions.STOP):
             features['stop'] = 1
@@ -224,15 +241,23 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         weights = {
             'successorScore': 100,
             'distanceToFood': -1,
-            'distanceToCapsule': -1,
+            'distanceToCapsule': -2,
             'distanceToEnemy': 0, # regular distance to closest enemy
-            'distanceToEnemyInversed': -5,
-            'stop': -100
+            'distanceToEnemyInversed': -10,
+            'stop': -100,
+            'numInvaders': -1000
+            # 'onDefense': 0
         }
         if self.scaredEnemies:
             #print(self.scaredEnemies)
-            weights['distanceToEnemy'] = -10 # starts to prioritize scared ghosts
+            weights['distanceToEnemy'] = -1 # starts to prioritize scared ghosts
             weights['distanceToEnemyInversed'] = 0 # forgets about keeping distance 
+            weights['distanceToFood'] = -2
+            # weights['distanceToCapsule'] = -4    this should be irrelevant as long as theres only one capsule lol
+        # if self.enemyClose:
+        #     weights['onDefense'] = -0.75
+        #     weights['distanceToFood'] = -0.5
+        #     weights['distanceToCapsule'] = -0.5
 
         return weights 
 
