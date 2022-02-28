@@ -1,3 +1,4 @@
+from pickle import FALSE
 from pacai.core import game
 from pacai.util import reflection
 from pacai.core.directions import Directions
@@ -175,13 +176,14 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     def __init__(self, index, **kwargs):
         super().__init__(index)
 
-    
+        scaredEnemies = 0
 
     def getFeatures(self, gameState, action):
         features = {}
         successor = self.getSuccessor(gameState, action)
         features['successorScore'] = self.getScore(successor)
         myPos = successor.getAgentState(self.index).getPosition()
+
         # Compute distance to the nearest food.
         foodList = self.getFood(successor).asList()
         capsuleList = self.getCapsules(successor)
@@ -191,27 +193,47 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
             features['distanceToFood'] = minDistance
 
-        #capsule
+        # Calculating minimum distance to enemy
         if (len(capsuleList) > 0):
             minDistanceCapsule = min([self.getMazeDistance(myPos, capsule) for capsule in capsuleList])
             features['distanceToCapsule'] = minDistanceCapsule
 
-        # Reward ORA for staying away from Ghosts
+        # Calculating distance to enemy
         enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
-        myPos = successor.getAgentState(self.index).getPosition()
         if len(enemies) > 0:
             enemyDistance = min([self.getMazeDistance(myPos, enemy.getPosition()) for enemy in enemies]) 
             features['distanceToEnemy'] = enemyDistance
+            if enemyDistance <= 10 and enemyDistance > 0: # checking if close to ghost
+                features['distanceToEnemyInversed'] = 1 / enemyDistance 
+                # Getting the inverse to discourage getting close to the ghost, more incentive the closer
+
+        # Condering scared ghosts
+        enemies = [gameState.getAgentState(e) for e in self.getOpponents(successor)]
+        scaredGhosts = [g for g in enemies if g.getScaredTimer() > 0]
+        self.scaredEnemies = len(scaredGhosts)
+        #print("scared" for e in enemies if e.isScared())
+        print(self.scaredEnemies)
+
+        if (action == Directions.STOP):
+            features['stop'] = 1
 
         return features
 
 
     def getWeights(self, gameState, action):
-        return {
+        weights = {
             'successorScore': 100,
             'distanceToFood': -1,
             'distanceToCapsule': -1,
-            'distanceToEnemy': 1
+            'distanceToEnemy': 0, # regular distance to closest enemy
+            'distanceToEnemyInversed': -5,
+            'stop': -100
         }
+        if self.scaredEnemies:
+            #print(self.scaredEnemies)
+            weights['distanceToEnemy'] = -10 # starts to prioritize scared ghosts
+            weights['distanceToEnemyInversed'] = 0 # forgets about keeping distance 
+
+        return weights 
 
 
