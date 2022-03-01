@@ -1,4 +1,3 @@
-from pickle import FALSE
 from pacai.core import game
 from pacai.util import reflection
 from pacai.core.directions import Directions
