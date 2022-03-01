@@ -1,3 +1,4 @@
+from pacai.core import game
 from pacai.util import reflection
 from pacai.core.directions import Directions
 import logging
@@ -5,9 +6,6 @@ import random
 import time
 
 from pacai.agents.capture.capture import CaptureAgent
-# from pacai.agents.capture.defense import DefensiveReflexAgent
-# from pacai.agents.capture.offense import OffensiveReflexAgent
-# from pacai.agents.capture.reflex import ReflexCaptureAgent
 
 from pacai.util import util
 
@@ -129,6 +127,20 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
             dists = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
             features['invaderDistance'] = min(dists)
 
+        #
+        # Compute distance to the nearest food and capsule.
+        myFoodList = self.getFoodYouAreDefending(successor).asList()
+        myCapList = self.getCapsulesYouAreDefending(successor)
+        # This should always be True, but better safe than sorry.
+        if (len(myFoodList) > 0):
+            minDistanceFood = min([self.getMazeDistance(myPos, food) for food in myFoodList])
+            features['foodDistance'] = minDistanceFood #average distance maybe?
+        #
+        if (len(myCapList) > 0):
+            minDistanceCapsule = min([self.getMazeDistance(myPos, cap) for cap in myCapList])
+            features['capsuleDistance'] = minDistanceCapsule #average distance maybe?
+        #
+        #
         if (action == Directions.STOP):
             features['stop'] = 1
 
@@ -138,11 +150,16 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
 
         return features
 
+    def getOpponentLocations(self, gameState):
+        return [gameState.getAgentPosition(enemy) for enemy in self.getOpponents(gameState)]
+
     def getWeights(self, gameState, action):
         return {
             'numInvaders': -1000,
             'onDefense': 100,
             'invaderDistance': -10,
+            'foodDistance': -4,
+            'capsuleDistance': -6,
             'stop': -100,
             'reverse': -2
         }
@@ -158,26 +175,89 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     def __init__(self, index, **kwargs):
         super().__init__(index)
 
+        self.scaredEnemies = 0
+        # self.enemyClose = 0
+
     def getFeatures(self, gameState, action):
         features = {}
+
         successor = self.getSuccessor(gameState, action)
         features['successorScore'] = self.getScore(successor)
+        # myState = successor.getAgentState(self.index)
+        myPos = successor.getAgentState(self.index).getPosition()
 
         # Compute distance to the nearest food.
         foodList = self.getFood(successor).asList()
+        capsuleList = self.getCapsules(successor)
+
+        # Computes whether we're on defense (1) or offense (0).
+        # features['onDefense'] = 1
+        # if (myState.isPacman()):
+        #     features['onDefense'] = 0
 
         # This should always be True, but better safe than sorry.
         if (len(foodList) > 0):
-            myPos = successor.getAgentState(self.index).getPosition()
             minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
             features['distanceToFood'] = minDistance
 
+        # Calculating minimum distance to enemy
+        if (len(capsuleList) > 0):
+            minDistanceCapsule = min([self.getMazeDistance(myPos, capsule) for capsule in capsuleList])
+            features['distanceToCapsule'] = minDistanceCapsule
+
+        # Calculating distance to enemy
+        enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
+        if len(enemies) > 0:
+            enemyDistance = min([self.getMazeDistance(myPos, enemy.getPosition()) for enemy in enemies]) 
+            features['distanceToEnemy'] = enemyDistance
+
+            # if enemyDistance < 2:
+            #     self.enemyClose += 1
+
+            if enemyDistance <= 10 and enemyDistance > 0: # checking if close to ghost
+                features['distanceToEnemyInversed'] = 1 / enemyDistance 
+                # Getting the inverse to discourage getting close to the ghost, more incentive the closer
+
+        # Condering scared ghosts
+        enemies = [gameState.getAgentState(e) for e in self.getOpponents(successor)]
+        scaredGhosts = [g for g in enemies if g.getScaredTimer() > 0]
+        self.scaredEnemies = len(scaredGhosts)
+        #print("scared" for e in enemies if e.isScared())
+        # print(self.scaredEnemies)
+
+        # Computes distance to invaders we can see.
+        enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
+        invaders = [a for a in enemies if a.isPacman() and a.getPosition() is not None]
+        features['numInvaders'] = len(invaders)
+
+        if (action == Directions.STOP):
+            features['stop'] = 1
+
         return features
 
+
     def getWeights(self, gameState, action):
-        return {
+        weights = {
             'successorScore': 100,
-            'distanceToFood': -1
+            'distanceToFood': -1,
+            'distanceToCapsule': -2,
+            'distanceToEnemy': 0, # regular distance to closest enemy
+            'distanceToEnemyInversed': -10,
+            'stop': -100,
+            'numInvaders': -1000
+            # 'onDefense': 0
         }
+        if self.scaredEnemies:
+            #print(self.scaredEnemies)
+            weights['distanceToEnemy'] = -1 # starts to prioritize scared ghosts
+            weights['distanceToEnemyInversed'] = 0 # forgets about keeping distance 
+            weights['distanceToFood'] = -2
+            # weights['distanceToCapsule'] = -4    this should be irrelevant as long as theres only one capsule lol
+        # if self.enemyClose:
+        #     weights['onDefense'] = -0.75
+        #     weights['distanceToFood'] = -0.5
+        #     weights['distanceToCapsule'] = -0.5
+
+        return weights 
 
 
