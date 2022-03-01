@@ -249,7 +249,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         weights = {
             'successorScore': 100,
             'distanceToFood': -1,
-            'distanceToCapsule': -1,
+            'distanceToCapsule': -2,
             'distanceToEnemy': 0, # regular distance to closest enemy
             'distanceToEnemyInversed': -5,
             'stop': -100,
