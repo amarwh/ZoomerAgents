@@ -135,6 +135,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         if (len(myFoodList) > 0):
             minDistanceFood = min([self.getMazeDistance(myPos, food) for food in myFoodList])
             features['foodDistance'] = minDistanceFood #average distance maybe?
+            
         #
         if (len(myCapList) > 0):
             minDistanceCapsule = min([self.getMazeDistance(myPos, cap) for cap in myCapList])
@@ -185,6 +186,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         features['successorScore'] = self.getScore(successor)
         # myState = successor.getAgentState(self.index)
         myPos = successor.getAgentState(self.index).getPosition()
+
+        if myPos == None:
+            features['dead'] = 1
 
         # Compute distance to the nearest food.
         foodList = self.getFood(successor).asList()
@@ -244,7 +248,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             'distanceToEnemy': 0, # regular distance to closest enemy
             'distanceToEnemyInversed': -10,
             'stop': -100,
-            'numInvaders': -1000
+            'numInvaders': -1000,
+            'dead': -1000
             # 'onDefense': 0
         }
         if self.scaredEnemies:
@@ -252,7 +257,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             weights['distanceToEnemy'] = -1 # starts to prioritize scared ghosts
             weights['distanceToEnemyInversed'] = 0 # forgets about keeping distance 
             weights['distanceToFood'] = -2
-            # weights['distanceToCapsule'] = -4    this should be irrelevant as long as theres only one capsule lol
+            weights['distanceToCapsule'] = -0.5    #this should be irrelevant as long as theres only one capsule lol
         # if self.enemyClose:
         #     weights['onDefense'] = -0.75
         #     weights['distanceToFood'] = -0.5
