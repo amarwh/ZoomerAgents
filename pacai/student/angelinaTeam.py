@@ -1,12 +1,12 @@
-from pacai.core import game
+from pacai.core import game, gamestate
 from pacai.util import reflection
 from pacai.core.directions import Directions
+from pacai.util.priorityQueue import PriorityQueue
 import logging
 import random
 import time
 
 from pacai.agents.capture.capture import CaptureAgent
-
 from pacai.util import util
 
 def createTeam(firstIndex, secondIndex, isRed,
@@ -177,6 +177,32 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         self.scaredEnemies = 0
         # self.enemyClose = 0
+    
+    def uniformCostSearch(problem):
+        """
+        Search the node of least total cost first.
+        """
+
+        fringe = PriorityQueue()
+        visited = []
+        successorPath = []
+
+        fringe.push((problem.startingState(), successorPath, 1), 0)
+
+        while not fringe.isEmpty():
+            state, actionsPath, cost = fringe.pop()
+
+            if problem.isGoal(state):
+                return actionsPath
+
+            if state not in visited:
+                visited.append(state)
+
+                successors = problem.successorStates(state)
+
+                for i in successors:
+                    if i not in visited:
+                        fringe.push((i[0], actionsPath + [i[1]], cost + i[2]), cost)
 
     def getFeatures(self, gameState, action):
         features = {}
@@ -197,7 +223,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         # This should always be True, but better safe than sorry.
         if (len(foodList) > 0):
-            minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
+            # minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
+            minDistance = self.uniformCostSearch(gameState)
             features['distanceToFood'] = minDistance
 
         # Calculating minimum distance to enemy
