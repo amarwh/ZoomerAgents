@@ -177,9 +177,13 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         self.scaredEnemies = 0
         self.onDefense = 0
-        self.loopCounter = 5 if self.onDefense == 1 else 0
+        self.loopCounter = 0
+        self.agentState = []
 
     def getFeatures(self, gameState, action):
+       
+
+
         features = {}
 
         successor = self.getSuccessor(gameState, action)
@@ -188,9 +192,22 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         myState = successor.getAgentState(self.index)
         myPos = myState.getPosition()
 
- 
-        if (not myState.isPacman()):
-            self.onDefense = 1
+
+         # loop problem
+
+        if (len(self.agentState) < 20):
+            pass
+        else:
+
+            if self.agentState[-1] and not myState.isPacman():
+                self.onDefense = 1
+                self.loopCounter = 5
+
+        if myState.isPacman():
+            self.agentState.append(True)
+        else:
+            self.agentState.append(False)
+
 
         # Compute distance to the nearest food.
         foodList = self.getFood(successor).asList()
@@ -228,19 +245,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             features['stop'] = 1
 
 
-        self.onDefense = 0 if self.loopCounter == 0 else 1
 
-        # Loop fix
-        # previousPacmans = 0
-        # previousGameState = self.getPreviousObservation()
-        # previousStateFriends = previousGameState.getTeam()
-        # previousStatePacmans = [p for p in previousStateFriends if previousGameState.getAgentState(p).isPacman() and )
-        # previousPacmans = len(previousStatePacmans)
-
-        # currentPacman = 0
-        # currentState = self.gameState
-        # currentStateFriends = currentState.getTeam()
-        # currentStatePacmans = [cp for cp in currentStateFriends if currentState.getAgentState(cp).isPacman()]
+        
 
         return features
 
@@ -262,9 +268,15 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             weights['distanceToEnemyInversed'] = 0 # forgets about keeping distance 
             weights['distanceToFood'] = -2
         
-        if self.onDefense:
+        if self.onDefense and not self.agentState[-1]:
+            print("defending")
+            print(self.onDefense)
+            print(self.loopCounter)
+            print("-")
             weights['stop'] = 1000
             self.loopCounter -= 1
+            if self.loopCounter == 1:
+                self.onDefense = 0
 
 
         return weights 
