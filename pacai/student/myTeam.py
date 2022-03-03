@@ -177,18 +177,37 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         super().__init__(index)
 
         self.scaredEnemies = 0
-        # self.enemyClose = 0
+        self.onDefense = 0
+        self.loopCounter = 0
+        self.agentState = []
 
     def getFeatures(self, gameState, action):
         features = {}
 
         successor = self.getSuccessor(gameState, action)
         features['successorScore'] = self.getScore(successor)
-        # myState = successor.getAgentState(self.index)
+        myState = successor.getAgentState(self.index)
         myPos = successor.getAgentState(self.index).getPosition()
 
         if myPos == None:
             features['dead'] = 1
+
+
+        # loop problem
+
+        if (len(self.agentState) < 20):
+            pass
+        else:
+
+            if self.agentState[-1] and not myState.isPacman():
+                self.onDefense = 1
+                self.loopCounter = 5
+
+        if myState.isPacman():
+            self.agentState.append(True)
+        else:
+            self.agentState.append(False)
+
 
         # Compute distance to the nearest food.
         foodList = self.getFood(successor).asList()
@@ -257,11 +276,16 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             weights['distanceToEnemy'] = -1 # starts to prioritize scared ghosts
             weights['distanceToEnemyInversed'] = 0 # forgets about keeping distance 
             weights['distanceToFood'] = -2
-            weights['distanceToCapsule'] = -0.5    #this should be irrelevant as long as theres only one capsule lol
-        # if self.enemyClose:
-        #     weights['onDefense'] = -0.75
-        #     weights['distanceToFood'] = -0.5
-        #     weights['distanceToCapsule'] = -0.5
+            #weights['distanceToCapsule'] = -0.5    #this should be irrelevant as long as theres only one capsule lol
+        if self.onDefense and not self.agentState[-1]:
+            # print("defending")
+            # print(self.onDefense)
+            # print(self.loopCounter)
+            # print("-")
+            weights['stop'] = 1000
+            self.loopCounter -= 1
+            if self.loopCounter == 1:
+                self.onDefense = 0
 
         return weights 
 

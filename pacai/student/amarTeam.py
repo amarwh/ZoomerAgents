@@ -157,7 +157,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         return {
             'numInvaders': -1000,
             'onDefense': 100,
-            'invaderDistance': -10,
+            'invaderDistance': -12,
             'foodDistance': -4,
             'capsuleDistance': -6,
             'stop': -100,
@@ -234,7 +234,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         # Considering scared ghosts
         enemies = [gameState.getAgentState(e) for e in self.getOpponents(successor)]
-        scaredGhosts = [g for g in enemies if g.getScaredTimer() > 0]
+        scaredGhosts = [g for g in enemies if g.getScaredTimer() > 0 and not g.isPacman() and g.getPosition() is not None]
         self.scaredEnemies = len(scaredGhosts)
 
         # Computes distance to invaders we can see.
@@ -257,10 +257,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             'distanceToFood': -1,
             'distanceToCapsule': -2,
             'distanceToEnemy': 0, # regular distance to closest enemy
-            'distanceToEnemyInversed': -5,
+            'distanceToEnemyInversed': -10,
             'stop': -100,
-            'numInvaders': -1000,
-            'onDefense': 0
+            'numInvaders': -1000
         }
         
         if self.scaredEnemies:
@@ -269,10 +268,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             weights['distanceToFood'] = -2
         
         if self.onDefense and not self.agentState[-1]:
-            print("defending")
-            print(self.onDefense)
-            print(self.loopCounter)
-            print("-")
+            # print("defending")
+            # print(self.onDefense)
+            # print(self.loopCounter)
+            # print("-")
             weights['stop'] = 1000
             self.loopCounter -= 1
             if self.loopCounter == 1:
