@@ -1,12 +1,12 @@
-from pacai.core import game, gamestate
+from pacai.core import game
 from pacai.util import reflection
 from pacai.core.directions import Directions
-from pacai.util.priorityQueue import PriorityQueue
 import logging
 import random
 import time
 
 from pacai.agents.capture.capture import CaptureAgent
+
 from pacai.util import util
 
 def createTeam(firstIndex, secondIndex, isRed,
@@ -135,6 +135,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         if (len(myFoodList) > 0):
             minDistanceFood = min([self.getMazeDistance(myPos, food) for food in myFoodList])
             features['foodDistance'] = minDistanceFood #average distance maybe?
+            
         #
         if (len(myCapList) > 0):
             minDistanceCapsule = min([self.getMazeDistance(myPos, cap) for cap in myCapList])
@@ -177,32 +178,6 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         self.scaredEnemies = 0
         # self.enemyClose = 0
-    
-    def uniformCostSearch(problem):
-        """
-        Search the node of least total cost first.
-        """
-
-        fringe = PriorityQueue()
-        visited = []
-        successorPath = []
-
-        fringe.push((problem.startingState(), successorPath, 1), 0)
-
-        while not fringe.isEmpty():
-            state, actionsPath, cost = fringe.pop()
-
-            if problem.isGoal(state):
-                return actionsPath
-
-            if state not in visited:
-                visited.append(state)
-
-                successors = problem.successorStates(state)
-
-                for i in successors:
-                    if i not in visited:
-                        fringe.push((i[0], actionsPath + [i[1]], cost + i[2]), cost)
 
     def getFeatures(self, gameState, action):
         features = {}
@@ -211,6 +186,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         features['successorScore'] = self.getScore(successor)
         # myState = successor.getAgentState(self.index)
         myPos = successor.getAgentState(self.index).getPosition()
+
+        if myPos == None:
+            features['dead'] = 1
 
         # Compute distance to the nearest food.
         foodList = self.getFood(successor).asList()
@@ -223,8 +201,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         # This should always be True, but better safe than sorry.
         if (len(foodList) > 0):
-            # minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
-            minDistance = self.uniformCostSearch(gameState)
+            minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
             features['distanceToFood'] = minDistance
 
         # Calculating minimum distance to enemy
@@ -271,7 +248,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             'distanceToEnemy': 0, # regular distance to closest enemy
             'distanceToEnemyInversed': -10,
             'stop': -100,
-            'numInvaders': -1000
+            'numInvaders': -1000,
+            'dead': -1000
             # 'onDefense': 0
         }
         if self.scaredEnemies:
@@ -279,12 +257,11 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             weights['distanceToEnemy'] = -1 # starts to prioritize scared ghosts
             weights['distanceToEnemyInversed'] = 0 # forgets about keeping distance 
             weights['distanceToFood'] = -2
-            # weights['distanceToCapsule'] = -4    this should be irrelevant as long as theres only one capsule lol
+            weights['distanceToCapsule'] = -0.5    #this should be irrelevant as long as theres only one capsule lol
         # if self.enemyClose:
         #     weights['onDefense'] = -0.75
         #     weights['distanceToFood'] = -0.5
         #     weights['distanceToCapsule'] = -0.5
 
         return weights 
-
-
+        
