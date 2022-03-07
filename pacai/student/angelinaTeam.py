@@ -135,13 +135,13 @@ class ReflexCaptureAgent(CaptureAgent):
         # actions = state.getLegalActions(self.index)
         # actions = self.actions
         
-        if len(self.actions) == 0:
-            return 0.0
-        else:
-            for action in self.actions:
-                qValues.append(self.getQValue(state, action))
-                
-            return max(qValues)
+        # if len(self.actions) == 0:
+        #     return 0.0
+        # else:
+        for action in self.actions:
+            qValues.append(self.getQValue(state, action))
+            
+        return max(qValues)
 
     def getPolicy(self, state):
         # actions = state.getLegalActions(self.index)
@@ -149,15 +149,15 @@ class ReflexCaptureAgent(CaptureAgent):
         bestAction = None
         maxQVal = -999999
 
-        if len(self.actions) == 0:
-            return 'South'
-        else:
-            for action in self.actions:
-                qVal = self.getQValue(state, action)
+        # if len(self.actions) == 0:
+        #     return 'South'
+        # else:
+        for action in self.actions:
+            qVal = self.getQValue(state, action)
 
-                if qVal > maxQVal:
-                    maxQVal = qVal
-                    bestAction = action
+            if qVal > maxQVal:
+                maxQVal = qVal
+                bestAction = action
 
         return bestAction
 
