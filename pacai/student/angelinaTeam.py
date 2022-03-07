@@ -59,6 +59,21 @@ class ReflexCaptureAgent(CaptureAgent):
 
     #     return random.choice(bestActions)
 
+    def chooseAction(self, gameState):
+        self.actions = gameState.getLegalActions(self.index)
+        bestAction = None
+        start = time.time()
+        # if len(self.actions) == 0:
+        #     return 'South'
+
+        # if probability.flipCoin(self.getEpsilon()):
+        if probability.flipCoin(self.epsilon):
+            bestAction = random.choice(self.actions)
+        else:
+            bestAction = self.getPolicy(gameState)
+        logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
+        return bestAction
+
     def getSuccessor(self, gameState, action):
         """
         Finds the next successor which is a grid position (location tuple).
@@ -111,7 +126,7 @@ class ReflexCaptureAgent(CaptureAgent):
         features = self.getFeatures(state, action)
         weights = self.getWeights(state, action)
 
-        qValue = features * weights
+        qValue = sum(features[feature] * weights[feature] for feature in features)
 	    
         return qValue
     
@@ -143,22 +158,6 @@ class ReflexCaptureAgent(CaptureAgent):
                 if qVal > maxQVal:
                     maxQVal = qVal
                     bestAction = action
-
-        return bestAction
-
-    def chooseAction(self, state):
-        # actions = state.getLegalActions(state)
-        actions = self.actions
-        bestAction = None
-
-        if len(self.actions) == 0:
-            return 'South'
-
-        # if probability.flipCoin(self.getEpsilon()):
-        if probability.flipCoin(self.epsilon):
-            bestAction = random.choice(self.actions)
-        else:
-            bestAction = self.getPolicy(state)
 
         return bestAction
 
