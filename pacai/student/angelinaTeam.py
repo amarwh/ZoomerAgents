@@ -10,6 +10,7 @@ import time
 from pacai.agents.capture.capture import CaptureAgent
 from pacai.util import util
 
+
 def createTeam(firstIndex, secondIndex, isRed,
         first = 'OffensiveReflexAgent',
         second = 'DefensiveReflexAgent'):
@@ -30,7 +31,7 @@ class ReflexCaptureAgent(CaptureAgent):
     A base class for reflex agents that chooses score-maximizing actions.
     """
 
-    def __init__(self, index, actionFn = None, **kwargs):
+    def __init__(self, index, **kwargs):
         super().__init__(index, **kwargs)
 
         # if (actionFn is None):
@@ -43,36 +44,36 @@ class ReflexCaptureAgent(CaptureAgent):
         self.alpha = 0.5
         self.discountRate = 1.0
 
-    # def chooseAction(self, gameState):
-    #     """
-    #     Picks among the actions with the highest return from `ReflexCaptureAgent.evaluate`.
-    #     """
-
-    #     actions = gameState.getLegalActions(self.index)
-
-    #     start = time.time()
-    #     values = [self.evaluate(gameState, a) for a in actions]
-    #     logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
-
-    #     maxValue = max(values)
-    #     bestActions = [a for a, v in zip(actions, values) if v == maxValue]
-
-    #     return random.choice(bestActions)
-
     def chooseAction(self, gameState):
-        self.actions = gameState.getLegalActions(self.index)
-        bestAction = None
-        start = time.time()
-        # if len(self.actions) == 0:
-        #     return 'South'
+        """
+        Picks among the actions with the highest return from `ReflexCaptureAgent.evaluate`.
+        """
 
-        # if probability.flipCoin(self.getEpsilon()):
-        if probability.flipCoin(self.epsilon):
-            bestAction = random.choice(self.actions)
-        else:
-            bestAction = self.getPolicy(gameState)
+        actions = gameState.getLegalActions(self.index)
+
+        start = time.time()
+        values = [self.evaluate(gameState, a) for a in actions]
         logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
-        return bestAction
+
+        maxValue = max(values)
+        bestActions = [a for a, v in zip(actions, values) if v == maxValue]
+
+        return random.choice(bestActions)
+
+    # def chooseAction(self, gameState):
+    #     self.actions = gameState.getLegalActions(self.index)
+    #     bestAction = None
+    #     start = time.time()
+    #     # if len(self.actions) == 0:
+    #     #     return 'South'
+
+    #     # if probability.flipCoin(self.getEpsilon()):
+    #     if probability.flipCoin(self.epsilon):
+    #         bestAction = random.choice(self.actions)
+    #     else:
+    #         bestAction = self.getPolicy(gameState)
+    #     logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
+    #     return bestAction
 
     def getSuccessor(self, gameState, action):
         """
@@ -99,82 +100,82 @@ class ReflexCaptureAgent(CaptureAgent):
 
         return stateEval
 
-    def getFeatures(self, gameState, action):
-        """
-        Returns a dict of features for the state.
-        The keys match up with the return from `ReflexCaptureAgent.getWeights`.
-        """
+    # def getFeatures(self, gameState, action):
+    #     """
+    #     Returns a dict of features for the state.
+    #     The keys match up with the return from `ReflexCaptureAgent.getWeights`.
+    #     """
         
-        successor = self.getSuccessor(gameState, action)
+    #     successor = self.getSuccessor(gameState, action)
 
-        return {
-            'successorScore': self.getScore(successor)
-        }
+    #     return {
+    #         'successorScore': self.getScore(successor)
+    #     }
 
-    def getWeights(self, gameState, action):
-        """
-        Returns a dict of weights for the state.
-        The keys match up with the return from `ReflexCaptureAgent.getFeatures`.
-        """
+    # def getWeights(self, gameState, action):
+    #     """
+    #     Returns a dict of weights for the state.
+    #     The keys match up with the return from `ReflexCaptureAgent.getFeatures`.
+    #     """
 
-        return {
-            'successorScore': 1.0
-        }
+    #     return {
+    #         'successorScore': 1.0
+    #     }
 
-    # attempt at Q learning
-    def getQValue(self, state, action):
-        features = self.getFeatures(state, action)
-        weights = self.getWeights(state, action)
+    # # attempt at Q learning
+    # def getQValue(self, state, action):
+    #     features = self.getFeatures(state, action)
+    #     weights = self.getWeights(state, action)
 
-        qValue = sum(features[feature] * weights[feature] for feature in features)
+    #     qValue = sum(features[feature] * weights[feature] for feature in features)
 	    
-        return qValue
+    #     return qValue
     
-    def getValue(self, state):
-        qValues = []
-        # actions = state.getLegalActions(self.index)
-        # actions = self.actions
+    # def getValue(self, state):
+    #     qValues = []
+    #     # actions = state.getLegalActions(self.index)
+    #     # actions = self.actions
         
-        # if len(self.actions) == 0:
-        #     return 0.0
-        # else:
-        for action in self.actions:
-            qValues.append(self.getQValue(state, action))
+    #     # if len(self.actions) == 0:
+    #     #     return 0.0
+    #     # else:
+    #     for action in self.actions:
+    #         qValues.append(self.getQValue(state, action))
             
-        return max(qValues)
+    #     return max(qValues)
 
-    def getPolicy(self, state):
-        # actions = state.getLegalActions(self.index)
-        # actions = self.actions
-        bestAction = None
-        maxQVal = -999999
+    # def getPolicy(self, state):
+    #     # actions = state.getLegalActions(self.index)
+    #     # actions = self.actions
+    #     bestAction = None
+    #     maxQVal = -999999
 
-        # if len(self.actions) == 0:
-        #     return 'South'
-        # else:
-        for action in self.actions:
-            qVal = self.getQValue(state, action)
+    #     # if len(self.actions) == 0:
+    #     #     return 'South'
+    #     # else:
+    #     for action in self.actions:
+    #         qVal = self.getQValue(state, action)
 
-            if qVal > maxQVal:
-                maxQVal = qVal
-                bestAction = action
+    #         if qVal > maxQVal:
+    #             maxQVal = qVal
+    #             bestAction = action
 
-        return bestAction
+    #     return bestAction
 
-    def update(self, state, action, nextState):
-        features = self.getFeatures(state, action)
-        nextState = self.getSuccessor(state, action)
-        reward = nextState.getScore() - state.getScore()
+    # def update(self, state, action, nextState):
+    #     features = self.getFeatures(state, action)
+    #     nextState = self.getSuccessor(state, action)
+    #     reward = nextState.getScore() - state.getScore()
 
-        alpha = self.alpha
-        gamma = self.discountRate
+    #     alpha = self.alpha
+    #     gamma = self.discountRate
         
-        for feature in features:
-            # correction = reward + (gamma * V(s)) - Q(s, a)
-            correction = reward + (gamma * self.getValue(nextState)) - self.getQValue(state, action)
+    #     for feature in features:
+    #         # correction = reward + (gamma * V(s)) - Q(s, a)
+    #         correction = reward + (gamma * self.getValue(nextState)) - self.getQValue(state, action)
 
-            # w <- w + (a * correction * f(s, a))
-            self.weight[feature] = self.weight[feature] + (alpha * correction * features[feature])
+    #         # w <- w + (a * correction * f(s, a))
+    #         self.weight[feature] = self.weight[feature] + (alpha * correction * features[feature])
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
     """
@@ -258,6 +259,11 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         self.scaredEnemies = 0
         # self.enemyClose = 0
+
+        self.actions = []
+        # self.epsilon = 0.5
+        self.alpha = 0.8
+        self.discountRate = 1.0
 
     def getFeatures(self, gameState, action):
         features = {}
@@ -344,4 +350,75 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         return weights 
 
+
+    # attempt at Q learning
+    def getQValue(self, state, action):
+        features = self.getFeatures(state, action)
+        weights = self.getWeights(state, action)
+
+        qValue = sum(features[feature] * weights[feature] for feature in features)
+	    
+        return qValue
+    
+    def getValue(self, state):
+        qValues = []
+        # actions = state.getLegalActions(self.index)
+        # actions = self.actions
+        
+        # if len(self.actions) == 0:
+        #     return 0.0
+        # else:
+        for action in self.actions:
+            qValues.append(self.getQValue(state, action))
+            
+        return max(qValues)
+
+    def getPolicy(self, state):
+        # actions = state.getLegalActions(self.index)
+        # actions = self.actions
+        bestAction = None
+        maxQVal = -999999
+
+        # if len(self.actions) == 0:
+        #     return 'South'
+        # else:
+        for action in self.actions:
+            qVal = self.getQValue(state, action)
+
+            if qVal > maxQVal:
+                maxQVal = qVal
+                bestAction = action
+
+        return bestAction
+
+    def chooseAction(self, gameState):
+        self.actions = gameState.getLegalActions(self.index)
+        bestAction = None
+        start = time.time()
+        # if len(self.actions) == 0:
+        #     return 'South'
+
+        # if probability.flipCoin(self.getEpsilon()):
+        # if probability.flipCoin(self.epsilon):
+        #     bestAction = random.choice(self.actions)
+        # else:
+        
+        bestAction = self.getPolicy(gameState)
+        logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
+        return bestAction
+
+    def update(self, state, action, nextState):
+        features = self.getFeatures(state, action)
+        nextState = self.getSuccessor(state, action)
+        reward = nextState.getScore() - state.getScore()
+
+        alpha = self.alpha
+        gamma = self.discountRate
+        
+        for feature in features:
+            # correction = reward + (gamma * V(s)) - Q(s, a)
+            correction = reward + (gamma * self.getValue(nextState)) - self.getQValue(state, action)
+
+            # w <- w + (a * correction * f(s, a))
+            self.weight[feature] = self.weight[feature] + (alpha * correction * features[feature])
 
