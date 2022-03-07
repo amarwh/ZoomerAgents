@@ -131,11 +131,11 @@ class ReflexCaptureAgent(CaptureAgent):
     def getPolicy(self, state):
         # actions = state.getLegalActions(self.index)
         # actions = self.actions
-        # bestAction = None
+        bestAction = None
         maxQVal = -999999
 
         if len(self.actions) == 0:
-            return 'None'
+            return 'South'
         else:
             for action in self.actions:
                 qVal = self.getQValue(state, action)
@@ -144,15 +144,15 @@ class ReflexCaptureAgent(CaptureAgent):
                     maxQVal = qVal
                     bestAction = action
 
-            return bestAction
+        return bestAction
 
     def chooseAction(self, state):
         # actions = state.getLegalActions(state)
-        # actions = self.actions
-        # bestAction = None
+        actions = self.actions
+        bestAction = None
 
         if len(self.actions) == 0:
-            return 'None'
+            return 'South'
 
         # if probability.flipCoin(self.getEpsilon()):
         if probability.flipCoin(self.epsilon):
