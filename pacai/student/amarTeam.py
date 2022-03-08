@@ -12,7 +12,7 @@ from pacai.agents.capture.capture import CaptureAgent
 from pacai.util import util
 
 def createTeam(firstIndex, secondIndex, isRed,
-        first = 'OffensiveReflexAgent',
+        first = 'starAgent',
         second = 'DefensiveReflexAgent'):
     """
     This function should return a list of two agents that will form the capture team,
@@ -41,24 +41,140 @@ class starAgent(CaptureAgent):
         self.gScore = {}
         self.hScore = {}
         self.parent = {}
+        # 3/7/2022
+        self.goal = None
+        self.myPos = None
+        self.nodeCost = {}
+
+
+    # Work below 
+
+    '''
+    3/7/22 Notes:
+    - Which legal action to choose?
+        One whose successor position matches the next
+        cost effective node
+    '''
+
+
+    def findGoal(self, gameState):
+        '''
+        ---> means implementing
+        Goals to implement in order for Offense:
+            ---> Food
+            ---> Capsule
+            Scared Ghost
+            Home
+            Invader
+
+        * ---------- Needs improvement ---------- * 
+            - Look into self.getAgentStates  
+            - Change enemy to ghost or scared ghost 
+            - Make capsules cost less than food
+        '''
+
+        #self.myPos = gameState.getPosition(self.index)
+
+        foodList = self.getFood(gameState).asList()
+        capsuleList = self.getCapsules(gameState)
+        goalList = foodList + capsuleList
+        
+        goalCost = {}
+        for nodePos in goalList:
+            # cost[node] = myDistanceCost + ghostDistanceCost
+            # my distance from node
+            myDistanceCost = self.getMazeDistance(self.myPos, nodePos)
+            enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
+            # closest enemy distance to current node 
+            enemyDistance = min([self.getMazeDistance(enemy.getPosition(), nodePos) for enemy in enemies])
+            # getting ghostDistanceCost
+            ghostDistanceCost = 0
+            if enemyDistance <= 5:
+                ghostDistanceCost = 100
+            elif enemyDistance > 5 and enemyDistance <= 10:
+                ghostDistanceCost = 50
+            
+            goalCost[nodePos] = myDistanceCost + ghostDistanceCost
+        
+        # Finding the least cost goal node
+        tempCosts = min(goalCost.values())
+        leastCostGoal = [key for key in goalCost if goalCost[key] == tempCosts]
+        self.goal = leastCostGoal[0]
+
+        # Above code only finds safest food/capsule
+
+    def setCost(self, gameState):
+        '''
+        Set the cost of all nodes according to Goal and Ghost
+        Least cost, best action:
+            Food - 1
+            Capsule - 0
+            Scared Ghost - 2
+            ---> Ghost - 100
+            Home - 50 if ghost < 5 steps for past 5 moves
+            Offense - 25 if invader <= 1
+            Invader - 3 if not Pacman
+        '''
+        layout = gameState.getInitialLayout()
+        allNodes = layout.walls.asList(False)
+        for node in allNodes:
+            distanceToGoal = self.getMazeDistance(node, self.goal)
+            enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
+            # closest enemy distance to current node 
+            enemyDistance = min([self.getMazeDistance(enemy.getPosition(), node) for enemy in enemies])
+            # getting ghostDistanceCost
+            print("Goal")
+            print(self.goal)
+            print("Enemy Distance")
+            print(enemyDistance)
+            ghostDistanceCost = 0
+            
+            # Do this if I'm pacman
+            myState = gameState.getAgentState(self.index)
+            if not myState.isPacman():
+                if enemyDistance == 0: # ghost node
+                    ghostDistanceCost = 100
+                elif enemyDistance == 1:
+                    ghostDistanceCost = 50
+                elif enemyDistance == 2:
+                    ghostDistanceCost = 40
+                elif enemyDistance == 3:
+                    ghostDistanceCost = 30
+                elif enemyDistance == 4:
+                    ghostDistanceCost = 20
+                elif enemyDistance == 5:
+                    ghostDistanceCost = 10
+
+            self.nodeCost[node] = distanceToGoal + ghostDistanceCost
+            print("Pos: ")
+            print(node)
+            print("Cost: ")
+            print(self.nodeCost[node])
+
+    def searchAlgorithm(self, gameState):
+        pass
+
+    # Work above
+
 
     def h(self, gameState):
         pass
 
     def pathfinding(self, start, end):
-        node = end
-        path = [node]
-        while self.parent[node] is not start:
-            node = self.parent[node]
-            path.append((node))
-        path.append(start)
-        return path[-1]
+        pass
+        # node = end
+        # path = [node]
+        # while self.parent[node] is not start:
+        #     node = self.parent[node]
+        #     path.append((node))
+        # path.append(start)
+        # return path[-1]
 
-    
+    '''
     def aStar(self, gameState, start, end):
-        '''
-        Runs A* Search on all nodes to find the most cost effective path
-        '''
+        
+        # Runs A* Search on all nodes to find the most cost effective path
+        
 
 
 
@@ -90,23 +206,23 @@ class starAgent(CaptureAgent):
             # Up - North
             if not layout.isWall((x, y + 1)):
                 adjacent.append((x, y + 1))
-                parent[(x, y + 1)] = node
+                self.parent[(x, y + 1)] = node
 
             # Down - South
             if not layout.isWall((x, y - 1)):
                 adjacent.append((x, y - 1))
-                parent[(x, y - 1)] = node
+                self.parent[(x, y - 1)] = node
 
             # Right - East
             if not layout.isWall((x + 1, y)):
                 adjacent.append((x + 1, y))
-                parent[(x + 1, y)] = node
+                self.parent[(x + 1, y)] = node
 
             # Left - West
             if not layout.isWall((x - 1, y)):
                 adjacent.append((x - 1, y))
-                parent[(x - 1, y)] = node
-
+                self.parent[(x - 1, y)] = node
+    '''
         
 
 
@@ -118,6 +234,71 @@ class starAgent(CaptureAgent):
 
         actions = gameState.getLegalActions(self.index)
         start = time.time()
+        # 3/7/22 Below
+        # My Position
+        tempState = gameState.getAgentState(self.index)
+        self.myPos = tempState.getPosition()
+        #print(self.myPos)
+        # Run functions
+        self.findGoal(gameState)
+        self.setCost(gameState)
+
+        # Getting layout
+        layout = gameState.getInitialLayout()
+        # Checking every next valid move
+        adjacent = []
+        x, y = self.myPos
+        print(x, y)
+
+         # Up - North
+        if not layout.isWall((int(x), int(y + 1))):
+            adjacent.append((int(x), int(y + 1)))
+
+        # Down - South
+        if not layout.isWall((int(x), int(y - 1))):
+            adjacent.append((int(x), int(y - 1)))
+
+        # Right - East
+        if not layout.isWall((int(x + 1), int(y))):
+            adjacent.append((int(x + 1), int(y)))
+
+        # Left - West
+        if not layout.isWall((int(x - 1), int(y))):
+            adjacent.append((int(x - 1), int(y)))
+        
+        # Finding next least cost action
+        lowestAdjacentCost = 99999
+        for pos in adjacent:
+            
+            tempCost = self.nodeCost[pos]
+            #print(type(tempCost))
+            if tempCost < lowestAdjacentCost:
+                lowestAdjacentCost = tempCost
+                #print(lowestAdjacentCost)
+        lowestCostActions = [key for key in self.nodeCost if self.nodeCost[key] == lowestAdjacentCost]
+        print("Lowest Cost Actions")
+        print(lowestCostActions)
+        lowestAction = lowestCostActions[0] # Next best action
+
+        # Need to look at successorState action
+        bestAction = None
+        print(actions)
+        for action in actions:
+
+            successor = self.getSuccessor(gameState, action)
+            nextState = successor.getAgentState(self.index)
+            nextPos = nextState.getPosition()
+            print("Future Position: ")
+            print(nextPos)
+            print("Lowest Action: {}".format(lowestAction))
+            if nextPos == lowestAction:
+                bestAction = action
+                print("Best Action:")
+                print(bestAction)
+                break
+        if bestAction is None:
+            bestAction = random.choice(actions)
+        # 3/7/22 Above
         #values = [self.evaluate(gameState, a) for a in actions]
         logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
 
@@ -125,8 +306,8 @@ class starAgent(CaptureAgent):
         #bestActions = [a for a, v in zip(actions, values) if v == maxValue]
 
         #return random.choice(bestActions)
-        return random.choice(actions) # dummy return statement
-
+        #return random.choice(actions) # dummy return statement
+        return bestAction
     
     def getSuccessor(self, gameState, action):
         """
@@ -157,7 +338,7 @@ class ReflexCaptureAgent(CaptureAgent):
         """
 
         actions = gameState.getLegalActions(self.index)
-        print(actions)
+        #print(actions)
         start = time.time()
         values = [self.evaluate(gameState, a) for a in actions]
         logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
