@@ -62,9 +62,13 @@ class starAgent(CaptureAgent):
         return path
 
 
-    def checkIfGhost(self, node):
-        pass
-
+    def checkIfGhost(self, gameState, node):
+        enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
+        ghostPositions = [enemy.getPosition() for enemy in enemies if not enemy.isPacman()]
+        # print(ghostPositions)
+        if node in ghostPositions:
+            return True
+        return False
 
     def h(self, node, goal):
         '''
@@ -117,8 +121,6 @@ class starAgent(CaptureAgent):
             # Neighbor segment ---------- #
             children = []
             x, y = node
-            #x = int(x)
-            #y = int(y)
 
             up = int(y + 1)
             if not layout.isWall((x, up)):
@@ -139,8 +141,12 @@ class starAgent(CaptureAgent):
 
             for child in children:
                 # If child is a ghost, abandon
-                tempGScore = gScore[node] + 1
-                tempFScore = tempGScore + self.h(child, goal)
+                if self.checkIfGhost(gameState, child):
+                    tempGScore = gScore[node] + 1
+                    tempFScore = tempGScore + self.h(child, goal) + 100
+                else:
+                    tempGScore = gScore[node] + 1
+                    tempFScore = tempGScore + self.h(child, goal)
 
                 if tempFScore < fScore[child]:
                     gScore[child] = tempGScore
@@ -163,25 +169,38 @@ class starAgent(CaptureAgent):
 
         self.findGoal(gameState)
         path = self.aStar(gameState, self.myPos, self.goal)
-        print(path)
-        print("Goal: {0}".format(self.goal))
-        print(self.myPos)
+        # print("Round Start ----------")
+        # print("Path: ")
+        # print(path)
+        # print("myPos: {0}".format(self.myPos))
+        # print("Goal: {0}".format(self.goal))
+        # print("Next: {0}".format(path[1]))
+        
         #---------------------------#
         logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
         
         # Mapped every action position with its action
         # Makes returning the right action much easier
         mapActions = {}
+        futurePositions = []
         for action in actions:
             successor = self.getSuccessor(gameState, action)
             successorState = successor.getAgentState(self.index)
             actionPosition = successorState.getPosition()
+            futurePositions.append(actionPosition)
             mapActions[actionPosition] = action
 
         # if self.myPos is None:
         #     return random.choice(actions)
-        
-        if mapActions[path[1]] not in actions:
+        # print("Map: ")
+        # print(mapActions)
+        # print("Actions:")
+        # print(actions)
+        # print("Test:")
+        # #print(path[1])
+        # print("End -----------")
+        if path[1] not in futurePositions:
+            # print("Here")
             return random.choice(actions)
         return mapActions[path[1]]
 
@@ -229,16 +248,22 @@ class starAgent(CaptureAgent):
             # my distance from node
             myDistanceCost = self.getMazeDistance(self.myPos, nodePos)
             enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
-            # closest enemy distance to current node 
-            enemyDistance = min([self.getMazeDistance(enemy.getPosition(), nodePos) for enemy in enemies])
-            # getting ghostDistanceCost
-            ghostDistanceCost = 0
-            if enemyDistance <= 3:
-                ghostDistanceCost = 100
-            elif enemyDistance > 3 and enemyDistance <= 5:
-                ghostDistanceCost = 50
+            ghosts = [enemy for enemy in enemies if enemy.isBraveGhost()]
             
-            goalCost[nodePos] = myDistanceCost + ghostDistanceCost
+            if len(ghosts) > 1:
+                # closest enemy distance to current node 
+                enemyDistance = min([self.getMazeDistance(ghost.getPosition(), nodePos) for ghost in ghosts])
+                # getting ghostDistanceCost
+                ghostDistanceCost = 0
+                if enemyDistance <= 3:
+                    ghostDistanceCost = 100
+                elif enemyDistance > 3 and enemyDistance <= 5:
+                    ghostDistanceCost = 50
+                
+                goalCost[nodePos] = myDistanceCost + ghostDistanceCost
+
+            else:
+                goalCost[nodePos] = myDistanceCost
         
         # Finding the least cost goal node
         tempCosts = min(goalCost.values())
@@ -542,7 +567,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
                 # Getting the inverse to discourage getting close to the ghost, more incentive the closer
 
         # Considering scared ghosts
-        enemies = [gameState.getAgentState(e) for e in self.getOpponents(successor)]
+        enemies = [successor.getAgentState(e) for e in self.getOpponents(successor)]
         scaredGhosts = [g for g in enemies if g.getScaredTimer() > 0 and not g.isPacman() and g.getPosition() is not None]
         self.scaredEnemies = len(scaredGhosts)
 
