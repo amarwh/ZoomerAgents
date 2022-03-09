@@ -50,6 +50,7 @@ class starAgent(CaptureAgent):
         self.goal = None
         self.myPos = None
         #self.nodeCost = {}
+        self.danger = False
 
 
     def pathFinding(self, parent, start, goal):
@@ -70,14 +71,23 @@ class starAgent(CaptureAgent):
             return True
         return False
 
+    def checkIfTeammate(self, gameState, node):
+        teammates = [gameState.getAgentState(friend) for friend in self.getTeam(gameState)]
+        teamPos = [friend.getPosition() for friend in teammates]
+        teamPos.remove(self.myPos)
+        if node in teamPos:
+            return True
+        return False
+
     def h(self, node, goal):
         '''
         Input: Position of node and position of goal
         Output: Manhattan distance
         '''
-        x1, y1 = node
-        x2, y2 = goal
-        return abs(x1-x2) + abs(y1-y2)
+        # x1, y1 = node
+        # x2, y2 = goal
+        # return abs(x1-x2) + abs(y1-y2)
+        return self.getMazeDistance(node, goal)
 
 
     def aStar(self, gameState, start, goal):
@@ -144,6 +154,9 @@ class starAgent(CaptureAgent):
                 if self.checkIfGhost(gameState, child):
                     tempGScore = gScore[node] + 1
                     tempFScore = tempGScore + self.h(child, goal) + 100
+                elif self.checkIfTeammate(gameState, child):
+                    tempGScore = gScore[node] + 1
+                    tempFScore = tempGScore + self.h(child, goal) + 3
                 else:
                     tempGScore = gScore[node] + 1
                     tempFScore = tempGScore + self.h(child, goal)
@@ -219,6 +232,11 @@ class starAgent(CaptureAgent):
         else:
             return successor
 
+    # def straight(self, node, goal):
+    #     x1, y1 = node
+    #     x2, y2 = goal
+    #     return abs(x1-x2) + abs(y1-y2)
+
     def findGoal(self, gameState):
         '''
         Sets a position for self.goal
@@ -234,6 +252,10 @@ class starAgent(CaptureAgent):
             - Look into self.getAgentStates  
             - Change enemy to ghost or scared ghost 
             - Make capsules cost less than food
+            - len of legalMoves to see if in a tunnel or dead end 
+              if you're pacman
+            - Prioritize capsules
+            - Set cost of invader pos low, negative even?
         '''
 
         #self.myPos = gameState.getPosition(self.index)
@@ -243,31 +265,54 @@ class starAgent(CaptureAgent):
         goalList = foodList + capsuleList
         
         goalCost = {}
-        for nodePos in goalList:
-            # cost[node] = myDistanceCost + ghostDistanceCost
-            # my distance from node
-            myDistanceCost = self.getMazeDistance(self.myPos, nodePos)
-            enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
-            ghosts = [enemy for enemy in enemies if enemy.isBraveGhost()]
-            
-            if len(ghosts) > 1:
-                # closest enemy distance to current node 
-                enemyDistance = min([self.getMazeDistance(ghost.getPosition(), nodePos) for ghost in ghosts])
-                # getting ghostDistanceCost
-                ghostDistanceCost = 0
-                if enemyDistance <= 3:
-                    ghostDistanceCost = 100
-                elif enemyDistance > 3 and enemyDistance <= 5:
-                    ghostDistanceCost = 50
+        # danger = False
+        enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
+        ghosts = [enemy for enemy in enemies if enemy.isBraveGhost()]
+        invaders = [invader.getPosition() for invader in enemies if invader.isPacman()]
+        myState = gameState.getAgentState(self.index)
+        pac = myState.isPacman()
+        if len(invaders) >= 1 and pac:
+            self.danger = True
+        if self.danger:
+            for pos in invaders:
+                goalList.append(pos)
+                goalCost[pos] = 0
+        if len(invaders) < 1:
+            self.danger = False
+        if not self.danger:
+            for nodePos in goalList:
+                # cost[node] = myDistanceCost + ghostDistanceCost
+                # my distance from node
+                myDistanceCost = self.getMazeDistance(self.myPos, nodePos)
                 
-                goalCost[nodePos] = myDistanceCost + ghostDistanceCost
+                
+                if len(ghosts) > 1:
+                    # closest enemy distance to current node 
+                    enemyDistance = min([self.getMazeDistance(ghost.getPosition(), nodePos) for ghost in ghosts])
+                    # getting ghostDistanceCost
+                    ghostDistanceCost = 50 - enemyDistance
+                    # if enemyDistance <= 3:
+                    #     ghostDistanceCost = 100
+                    # elif enemyDistance > 3 and enemyDistance <= 5:
+                    #     ghostDistanceCost = 50
+                    # elif enemyDistance > 5 and enemyDistance <= 10:
+                    #     ghostDistanceCost = 25
+                    # elif enemyDistance > 10 and enemyDistance <= 15:
+                    #     ghostDistanceCost = 14
+                    # elif enemyDistance > 15 and enemyDistance <= 50:
+                    #     ghostDistanceCost = 6
+                    goalCost[nodePos] = myDistanceCost + ghostDistanceCost
+                else:
+                    goalCost[nodePos] = myDistanceCost
 
-            else:
-                goalCost[nodePos] = myDistanceCost
-        
+        # print(goalList)
+        # print(goalCost)
         # Finding the least cost goal node
         tempCosts = min(goalCost.values())
+        # print(goalList)
+        # print(tempCosts)
         leastCostGoal = [key for key in goalCost if goalCost[key] == tempCosts]
+        leastCostGoal.sort()
         self.goal = leastCostGoal[0]
 
         # Above code only finds safest food/capsule
