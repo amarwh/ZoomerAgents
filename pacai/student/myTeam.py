@@ -1,8 +1,8 @@
-from pacai.core import game
-from pacai.util import reflection
+# from pacai.core import game
+# from pacai.util import reflection
 from pacai.core.directions import Directions
-from pacai.agents.learning.reinforcement import ReinforcementAgent
-from pacai.util import probability
+# from pacai.agents.learning.reinforcement import ReinforcementAgent
+# from pacai.util import probability
 import logging
 import random
 import time
@@ -119,10 +119,10 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         if (len(myFoodList) > 0):
             minDistanceFood = min([self.getMazeDistance(myPos, food) for food in myFoodList])
             features['foodDistance'] = minDistanceFood
-            
+
         if (len(myCapList) > 0):
             minDistanceCapsule = min([self.getMazeDistance(myPos, cap) for cap in myCapList])
-            features['capsuleDistance'] = minDistanceCapsule 
+            features['capsuleDistance'] = minDistanceCapsule
 
         if (action == Directions.STOP):
             features['stop'] = 1
@@ -169,7 +169,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         features['successorScore'] = self.getScore(successor)
         myPos = successor.getAgentState(self.index).getPosition()
 
-        if myPos == None:
+        if myPos is None:
             features['dead'] = 1
 
         # Compute distance to the nearest food.
@@ -183,18 +183,25 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         # Calculating minimum distance to enemy
         if (len(capsuleList) > 0):
-            minDistanceCapsule = min([self.getMazeDistance(myPos, capsule) for capsule in capsuleList])
+            mazeDist = []
+            for capsule in capsuleList:
+                mazeDist.append(self.getMazeDistance(myPos, capsule))
+
+            minDistanceCapsule = min(mazeDist)
             features['distanceToCapsule'] = minDistanceCapsule
 
         # Calculating distance to enemy
         enemies = [gameState.getAgentState(enemy) for enemy in self.getOpponents(gameState)]
         if len(enemies) > 0:
-            enemyDistance = min([self.getMazeDistance(myPos, enemy.getPosition()) for enemy in enemies]) 
+            enemyDist = []
+            for enemy in enemies:
+                enemyDist.append(self.getMazeDistance(myPos, enemy.getPosition()))
+            enemyDistance = min(enemyDist)
             features['distanceToEnemy'] = enemyDistance
 
-            if enemyDistance <= 10 and enemyDistance > 0: # checking if close to ghost
-                features['distanceToEnemyInversed'] = 1 / enemyDistance 
-                # Getting the inverse to discourage getting close to the ghost, more incentive the closer
+            # Getting the inverse to discourage getting close to the ghost
+            if enemyDistance <= 10 and enemyDistance > 0:   # checking if close to ghost
+                features['distanceToEnemyInversed'] = 1 / enemyDistance
 
         # Condering scared ghosts
         enemies = [gameState.getAgentState(e) for e in self.getOpponents(successor)]
@@ -223,12 +230,12 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             'dead': -1000
         }
         if self.scaredEnemies:
-            weights['distanceToEnemy'] = -1 # starts to prioritize scared ghosts
-            weights['distanceToEnemyInversed'] = 0 # forgets about keeping distance 
+            weights['distanceToEnemy'] = -1     # starts to prioritize scared ghosts
+            weights['distanceToEnemyInversed'] = 0  # forgets about keeping distance
             weights['distanceToFood'] = -2
-            weights['distanceToCapsule'] = -0.5    
+            weights['distanceToCapsule'] = -0.5
 
-        return weights 
+        return weights
 
     # Q learning
     def getQValue(self, state, action):
@@ -236,9 +243,9 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         weights = self.getWeights(state, action)
 
         qValue = sum(features[feature] * weights[feature] for feature in features)
-	    
+
         return qValue
-    
+
     def getValue(self, state):
         qValues = []
 
@@ -264,10 +271,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         self.actions = gameState.getLegalActions(self.index)
         bestAction = None
         start = time.time()
-        
+
         bestAction = self.getPolicy(gameState)
         logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
-        
+
         return bestAction
 
     def update(self, state, action, nextState):
@@ -277,11 +284,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         alpha = self.alpha
         gamma = self.discountRate
-        
+
         for feature in features:
             # correction = reward + (gamma * V(s)) - Q(s, a)
             correction = reward + (gamma * self.getValue(nextState)) - self.getQValue(state, action)
 
             # w <- w + (a * correction * f(s, a))
             self.weight[feature] = self.weight[feature] + (alpha * correction * features[feature])
-
