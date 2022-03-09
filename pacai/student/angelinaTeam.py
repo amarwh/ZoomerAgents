@@ -40,9 +40,9 @@ class ReflexCaptureAgent(CaptureAgent):
         # self.actions = actionFn
 
         self.actions = []
-        self.epsilon = 0.5
-        self.alpha = 0.5
-        self.discountRate = 1.0
+        # self.epsilon = 0.5
+        self.alpha = 0.9
+        self.discountRate = 0.1
 
     def chooseAction(self, gameState):
         """
@@ -68,10 +68,10 @@ class ReflexCaptureAgent(CaptureAgent):
     #     #     return 'South'
 
     #     # if probability.flipCoin(self.getEpsilon()):
-    #     if probability.flipCoin(self.epsilon):
-    #         bestAction = random.choice(self.actions)
-    #     else:
-    #         bestAction = self.getPolicy(gameState)
+    #     # if probability.flipCoin(self.epsilon):
+    #     #     bestAction = random.choice(self.actions)
+    #     # else:
+    #     bestAction = self.getPolicy(gameState)
     #     logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
     #     return bestAction
 
@@ -100,27 +100,27 @@ class ReflexCaptureAgent(CaptureAgent):
 
         return stateEval
 
-    # def getFeatures(self, gameState, action):
-    #     """
-    #     Returns a dict of features for the state.
-    #     The keys match up with the return from `ReflexCaptureAgent.getWeights`.
-    #     """
+    def getFeatures(self, gameState, action):
+        """
+        Returns a dict of features for the state.
+        The keys match up with the return from `ReflexCaptureAgent.getWeights`.
+        """
         
-    #     successor = self.getSuccessor(gameState, action)
+        successor = self.getSuccessor(gameState, action)
 
-    #     return {
-    #         'successorScore': self.getScore(successor)
-    #     }
+        return {
+            'successorScore': self.getScore(successor)
+        }
 
-    # def getWeights(self, gameState, action):
-    #     """
-    #     Returns a dict of weights for the state.
-    #     The keys match up with the return from `ReflexCaptureAgent.getFeatures`.
-    #     """
+    def getWeights(self, gameState, action):
+        """
+        Returns a dict of weights for the state.
+        The keys match up with the return from `ReflexCaptureAgent.getFeatures`.
+        """
 
-    #     return {
-    #         'successorScore': 1.0
-    #     }
+        return {
+            'successorScore': 1.0
+        }
 
     # # attempt at Q learning
     # def getQValue(self, state, action):
@@ -262,8 +262,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         self.actions = []
         # self.epsilon = 0.5
-        self.alpha = 0.8
-        self.discountRate = 1.0
+        self.alpha = 0.2
+        self.discountRate = 0.9
 
     def getFeatures(self, gameState, action):
         features = {}
