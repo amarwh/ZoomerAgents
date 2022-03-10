@@ -104,7 +104,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         features['lazy'] = 0
 
         if len(self.prevLocations) > 3:
-            for location in self.prevLocations[-2:]:
+            for location in self.prevLocations[-3:]:
                 if myPos == location:
                     features['lazy'] = 1
 
@@ -143,9 +143,6 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
 
         return features
 
-    def getOpponentLocations(self, gameState):
-        return [gameState.getAgentPosition(enemy) for enemy in self.getOpponents(gameState)]
-
     def getWeights(self, gameState, action):
         return {
             'numInvaders': -1000,
@@ -155,7 +152,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
             'capsuleDistance': -6,
             'stop': -100,
             'reverse': -2,
-            'lazy': -500
+            'lazy': -850
         }
 
 class OffensiveReflexAgent(ReflexCaptureAgent):
@@ -257,58 +254,3 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             weights['distanceToCapsule'] = -0.5
 
         return weights
-
-    # # Q learning
-    # def getQValue(self, state, action):
-    #     features = self.getFeatures(state, action)
-    #     weights = self.getWeights(state, action)
-
-    #     qValue = sum(features[feature] * weights[feature] for feature in features)
-
-    #     return qValue
-
-    # def getValue(self, state):
-    #     qValues = []
-
-    #     for action in self.actions:
-    #         qValues.append(self.getQValue(state, action))
-
-    #     return max(qValues)
-
-    # def getPolicy(self, state):
-    #     bestAction = None
-    #     maxQVal = -999999
-
-    #     for action in self.actions:
-    #         qVal = self.getQValue(state, action)
-
-    #         if qVal > maxQVal:
-    #             maxQVal = qVal
-    #             bestAction = action
-
-    #     return bestAction
-
-    # def chooseAction(self, gameState):
-    #     self.actions = gameState.getLegalActions(self.index)
-    #     bestAction = None
-    #     start = time.time()
-
-    #     bestAction = self.getPolicy(gameState)
-    #     logging.debug('evaluate() time for agent %d: %.4f' % (self.index, time.time() - start))
-
-    #     return bestAction
-
-    # def update(self, state, action, nextState):
-    #     features = self.getFeatures(state, action)
-    #     nextState = self.getSuccessor(state, action)
-    #     reward = nextState.getScore() - state.getScore()
-
-    #     alpha = self.alpha
-    #     gamma = self.discountRate
-
-    #     for feature in features:
-    #         # correction = reward + (gamma * V(s)) - Q(s, a)
-    #         correction = reward + (gamma * self.getValue(nextState)) - self.getQValue(state, action)
-
-    #         # w <- w + (a * correction * f(s, a))
-    #         self.weight[feature] = self.weight[feature] + (alpha * correction * features[feature])
