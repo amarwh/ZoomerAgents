@@ -90,6 +90,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     def __init__(self, index, **kwargs):
         super().__init__(index)
 
+        self.prevLocations = []
+
     def getFeatures(self, gameState, action):
         features = {}
 
@@ -98,6 +100,14 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         myPos = myState.getPosition()
 
         # Computes whether we're on defense (1) or offense (0).
+        self.prevLocations.append(myPos)
+        features['lazy'] = 0
+
+        if len(self.prevLocations) > 3:
+            for location in self.prevLocations[-2:]:
+                if myPos == location:
+                    features['lazy'] = 1
+
         features['onDefense'] = 1
         if (myState.isPacman()):
             features['onDefense'] = 0
@@ -144,7 +154,8 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
             'foodDistance': -4,
             'capsuleDistance': -6,
             'stop': -100,
-            'reverse': -2
+            'reverse': -2,
+            'lazy': -500
         }
 
 class OffensiveReflexAgent(ReflexCaptureAgent):
@@ -161,6 +172,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         self.actions = []
         self.alpha = 0.2
         self.discountRate = 0.9
+        self.prevLocations = []
 
     def getFeatures(self, gameState, action):
         features = {}
@@ -168,6 +180,14 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         successor = self.getSuccessor(gameState, action)
         features['successorScore'] = self.getScore(successor)
         myPos = successor.getAgentState(self.index).getPosition()
+
+        self.prevLocations.append(myPos)
+        features['lazy'] = 0
+
+        if len(self.prevLocations) > 3:
+            for location in self.prevLocations[-2:]:
+                if myPos == location:
+                    features['lazy'] = 1
 
         if myPos is None:
             features['dead'] = 1
@@ -227,7 +247,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             'distanceToEnemyInversed': -10,
             'stop': -100,
             'numInvaders': -1000,
-            'dead': -1000
+            'dead': -1000,
+            'lazy': -500
         }
         if self.scaredEnemies:
             weights['distanceToEnemy'] = -1     # starts to prioritize scared ghosts
