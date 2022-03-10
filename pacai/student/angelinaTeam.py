@@ -186,7 +186,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
                 if myPos == location:
                     features['lazy'] = 1
 
-        if self.getMazeDistance(myPos, self.prevLocations[-1]):
+        if self.getMazeDistance(myPos, self.prevLocations[-1]) > 1:
             features['dead'] = 1
 
         # Compute distance to the nearest food.
