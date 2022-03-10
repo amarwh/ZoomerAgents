@@ -245,7 +245,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             'stop': -100,
             'numInvaders': -1000,
             'dead': -500,
-            'lazy': -850
+            'lazy': -1050
         }
         if self.scaredEnemies:
             weights['distanceToEnemy'] = -1     # starts to prioritize scared ghosts
